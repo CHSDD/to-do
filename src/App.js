@@ -34,7 +34,6 @@ const TodoItemInputField = (props) => {
     });
 
 
-
     return (<div>
       <ul>{todoList}</ul>
     </div>;
@@ -45,10 +44,17 @@ const TodoItemInputField = (props) => {
 
 function App() {
   const [todoItemList, setTodoItemList] = useState([]);
+  const onSubmit = (newTodoItem) => {
+    setTodoItemList([...todoItemList, {
+      id: todoItemId++,
+      todoItemContent: newTodoItem,
+      isFinished: false,
+    }]);
+  };
 
   return (
     <div className="App">
-      <TodoItemInputField onSubmit={() => {}} />
+      <TodoItemInputField onSubmit={onSubmit} />
       <TodoItemList todoItemList={todoItemList} />
     </div>
     
