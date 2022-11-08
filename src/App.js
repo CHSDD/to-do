@@ -42,41 +42,41 @@ const TodoItemInputField = (props) => {
 
   return (<div>
     <TextField
-       id="todo-item-input"
-       label="Todo Item"
-       variant="outlined"
-       onChange={(e) => setInput(e.target.value)} value={input}
+      id="todo-item-input"
+      label="Todo Item"
+      variant="outlined"
+      onChange={(e) => setInput(e.target.value)} value={input}
     />
     <Button variant="outlined" onClick={onSubmit}>Submit</Button>
-   </div>);
-  };
+  </div>);
+};
 
-  const TodoItem = (props) => {
-    const style = props.todoItem.isFinished ? { textDecoration: 'line-through' } : {};
-    return (<li>
-      <span style={style} onClick={() => 
+const TodoItem = (props) => {
+  const style = props.todoItem.isFinished ? { textDecoration: 'line-through' } : {};
+  return (<li>
+    <span style={style} onClick={() =>
       props.onTodoItemClick(props.todoItem)}>{props.todoItem.todoItemContent}</span>
-      <Button variant="outlined" onClick={() => props.onRemoveClick(props.todoItem)}>Remove</Button>
-    </li>);
-  };
+    <Button variant="outlined" onClick={() => props.onRemoveClick(props.todoItem)}>Remove</Button>
+  </li>);
+};
 
 
-  const TodoItemList = (props) => {
-    const todoList = props.todoItemList.map((todoItem, index) => {
-      return <TodoItem
-        key={index}
-        todoItem={todoItem}
-        onTodoItemClick={props.onTodoItemClick}
-        onRemoveClick={props.onRemoveClick}
+const TodoItemList = (props) => {
+  const todoList = props.todoItemList.map((todoItem, index) => {
+    return <TodoItem
+      key={index}
+      todoItem={todoItem}
+      onTodoItemClick={props.onTodoItemClick}
+      onRemoveClick={props.onRemoveClick}
     />;
 
-    });
+  });
 
 
-    return (<div>
-      <ul>{todoList}</ul>
-    </div>);
-  };
+  return (<div>
+    <ul>{todoList}</ul>
+  </div>);
+};
 
 
 
@@ -84,7 +84,7 @@ const TodoItemInputField = (props) => {
 function App() {
   const [todoItemList, setTodoItemList] = useState([]);
 
-  useEffect(() => {
+  const syncTodoItemListStateWithFirestore = () => {
     getDocs(collection(db, "todoItem")).then((querySnapshot) => {
       const firestoreTodoItemList = [];
       querySnapshot.forEach((doc) => {
@@ -96,46 +96,36 @@ function App() {
       });
       setTodoItemList(firestoreTodoItemList);
     });
+  };
+
+  useEffect(() => {
+        syncTodoItemListStateWithFirestore();  
   }, []);
 
+
+
   const onSubmit = async (newTodoItem) => {
-        const docRef = await addDoc(collection(db, "todoItem"), {
-          todoItemContent: newTodoItem,
-          isFinished: false,
-        });
-    
-    setTodoItemList([...todoItemList, {
-      id: docRef.id,
+    await addDoc(collection(db, "todoItem"), {
       todoItemContent: newTodoItem,
       isFinished: false,
-    }]);
+    });
+
+    syncTodoItemListStateWithFirestore();
   };
 
   const onTodoItemClick = async (clickedTodoItem) => {
-        const todoItemRef = doc(db, "todoItem", clickedTodoItem.id);
-        await setDoc(todoItemRef, { isFinished: !clickedTodoItem.isFinished }, { merge: true });    
-        setTodoItemList(todoItemList.map((todoItem) => {
-          if (clickedTodoItem.id === todoItem.id) {
-            return {
-              id: clickedTodoItem.id,
-              todoItemContent: clickedTodoItem.todoItemContent,
-              isFinished: !clickedTodoItem.isFinished,
-            };
-          } else {
-            return todoItem;
-          }
-        }));
-      };
+    const todoItemRef = doc(db, "todoItem", clickedTodoItem.id);
+    await setDoc(todoItemRef, { isFinished: !clickedTodoItem.isFinished }, { merge: true });
+    syncTodoItemListStateWithFirestore();
+  };
 
   const onRemoveClick = async (removedTodoItem) => {
     const todoItemRef = doc(db, "todoItem", removedTodoItem.id);
     await deleteDoc(todoItemRef);
-    setTodoItemList(todoItemList.filter((todoItem) => {
-      return todoItem.id !== removedTodoItem.id;
-    }));
+    syncTodoItemListStateWithFirestore();
   };
 
-    
+
 
   return (
     <div className="App">
